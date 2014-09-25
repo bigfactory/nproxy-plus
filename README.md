@@ -1,125 +1,159 @@
-# NProxy
+# NProxy-Plus
 
-A cli proxy tool specialized in file replacing
+基于[Nproxy](https://github.com/goddyZhao/nproxy)开发的本地代理转发服务器
 
-[![Build Status](https://secure.travis-ci.org/goddyZhao/nproxy.png)](http://travis-ci.org/goddyZhao/nproxy)
+## 安装
 
-## Why NProxy
+    npm install -g nproxy-plus
 
-Maybe you have such question as why NProxy when we have [Fiddler](http://www.fiddler2.com/fiddler2/), [Charles](http://www.charlesproxy.com/), [Rythem](http://www.alloyteam.com/2012/05/web-front-end-tool-rythem-1/) and [Tinyproxy](https://banu.com/tinyproxy/). Yes, there is no doubt that they are all great tools, however they don't meet my requirements:
+## 使用 
 
-* Support Mac, Linux and Windows(especially Mac and Linux)
-* Support replacing combo files with separated source files
-* Support directory mapping
+本地编写一个匹配规则文件，命名为例如rule.config.js:
 
-This is the main reason why NProxy is here. Besides, NProxy can improve the efficiency of my daily development for enterprise-level product with a bunch of complex building processes, which cost me lots of time.
-
-I've written a post named [NProxy: The Mjolnir for UI Developers](http://en.blog.goddyzhao.me/post/29470818841/nproxy-the-mjolnir-for-ui-developers)  and a keynote [NProxy: A Sharp Weapon for UI Developers](https://speakerdeck.com/u/goddyzhao/p/nproxy-a-sharp-weapon-for-ui-developers) to explain my reason for developing NProxy in detail.
-
-## Features
-
-* Support Mac, Linux and Windows  
-* Support both single file and combo file replacing
-* Support directory mapping with any files
-* Support both HTTP and HTTPS
-
-## Installation
-
-    npm install -g nproxy (node >= v0.8.x is required)
-
-If you are not familiar with Node.js and NPM, you can visit the [How to install NProxy](https://github.com/goddyZhao/nproxy/wiki/How-to-install-NProxy) wiki page to get detail information about installation of NProxy
-
-## Usage
     
-    nproxy -l replace_rule.js 
-
-    Setting your browser's proxy to 127.0.0.1:port(8989 by default)
-
-If you don't know how to set proxy for browser, please read this wiki: [How to set brower's proxy](https://github.com/goddyZhao/nproxy/wiki/How-to-set-browser's-proxy)
-
-
-### More Options:
-
-    Usage: nproxy [options]
-
-    Options:
-
-      -h, --help         output usage information
-      -V, --version      output the version number
-      -l, --list [list]  Specify the replace rule file
-      -p, --port [port]  Specify the port nproxy will listen on(8989 by default)
-      -t, --timeout [timeout] Specify the request timeout (5 seconds by default)
-
-## Template of Replace Rule file(should be a .js file)
-
     module.exports = [
-
-      // 1. replace single file with local one
+      //替换单个本地文件
       {
-        pattern: 'homepage.js',      // Match url you wanna replace
-        responder:  "/home/goddyzhao/workspace/homepage.js"
+        pattern : 'http://nproxy6.com/a.js',
+        responder : 'local',
+        options : {
+          file: '/repos/nproxy/test/support/files/replaced/c1.js'
+        }
       },
 
-      // 2. replace single file with web file
+      //映射到本地路径
       {
-        pattern: 'homepage.js',      // Match url you wanna replace
-        responder:  "http://www.anotherwebsite.com/assets/js/homepage2.js"
+        pattern : 'http://nproxy6.com/xx/',
+        responder : 'local',
+        options : {
+          file: '/repos/nproxy/test/support/files/replaced/'
+        }
       },
 
-      // 3. replace combo file with src with absolute file path
+      //替换单个网络文件
       {
-        pattern: 'group/homepageTileFramework.*.js', 
-        responder: [
-          '/home/goddyzhao/workspace/webapp/ui/homepage/js/a.js',
-          '/home/goddyzhao/workspace/webapp/ui/homepage/js/b.js',
-          '/home/goddyzhao/workspace/webapp/ui/homepage/js/c.js'
-        ] 
+        pattern : 'http://nproxy6.com/b.js',
+        responder : 'web',
+        options : {
+          file: 'http://g.tbcdn.cn/kissy/k/1.4.0/seed-min.js'
+        }
       },
 
-      // 4. replace combo file with src with relative file path and specified dir
+      //本地concat
       {
-        pattern: 'group/homepageTileFramework.*.js',
-        responder: {
-          dir: '/home/goddyzhao/workspace/webapp/ui/homepage/js',
-          src: [
-            'a.js',
-            'b.js',
-            'c.js'
+        pattern : 'http://nproxy6.com/c.js',
+        responder : 'concat',
+        options : {
+          dir : '/repos/nproxy/test/support/files/replaced/',
+          files: [
+            'c1.js',
+            'c2.js',
+            'c3.js',
+            'c1.js'
           ]
         }
       },
 
-      // 5. Map server image directory to local image directory
+      //网络combo
       {
-        pattern: 'ui/homepage/img',  // must be a string
-        responder: '/home/goddyzhao/image/' //must be a absolute directory path
+        pattern : 'http://nproxy6.com/??c1.js,c2.js,js/he.js',
+        responder : 'combo',
+        options : {
+          base: '/repos/nproxy/test/support/files/replaced/'
+        }
       },
 
-      // 6. Write responder with regular expression variables like $1, $2
+
+      //kissy模块实时编译
       {
-        pattern: /https?:\/\/[\w\.]*(?::\d+)?\/ui\/(.*)_dev\.(\w+)/,
-        responder: 'http://localhost/proxy/$1.$2'
+        pattern : 'http://nproxy6.com/d.js',
+        responder : 'kissy-combo',
+        options : {
+          packages: [{
+            'name': 'mt',
+            'path': '/repos/tb-buy/mt',
+            'charset': 'gbk'
+          }],
+          input: '/repos/tb-buy/mt/index.js' 
+        }
       },
 
-      // 7. Map server image directory to local image directory with regular expression
-      // This simple rule can replace multiple directories to corresponding locale ones
-      // For Example, 
-      //   http://host:port/ui/a/img/... => /home/a/image/...
-      //   http://host:port/ui/b/img/... => /home/b/image/...
-      //   http://host:port/ui/c/img/... => /home/c/image/...
-      //   ...
+      //使用自定义函数实现更复杂的匹配条件
       {
-        pattern: /ui\/(.*)\/img\//,
-        responder: '/home/$1/image/'
+        pattern : function(url, pattern, req, res){
+          if(req.query.local && req.cookies.user == 'john'){
+            return true;
+          }
+          return false;
+        },
+        responder : function(pattern, options, req, res, next){
+          var html = xtemplateCompiler('xxx');
+          res.send(html);
+        },
+        options : {
+          tplPath: '/repos/nproxy/test/support/files/tpl/'
+        }
       }
     ];
 
-You can use the [template file](https://github.com/goddyzhao/nproxy/blob/master/replace-rule.sample.js) and replace it with your own configurations. 
+运行以下命令启动服务器
 
-## Quickly setup rule files for SF project
+    nproxy -l rule.config.js 
 
-For UI Developers from SuccessFactors, here is a bonus for you guys. You can use the [sf-transfer](http://goddyzhao.github.com/sf-transfer) tool to transfer the combo xml file to NProxy rule file automatically!
+设置浏览器代理为 127.0.0.1:8989
+
+### 更多启动选项:
+
+    用法: nproxy [options]
+
+    选项:
+
+      -h, --help         输出使用方法
+      -V, --version      输出版本号
+      -l, --list [list]  指定匹配规则文件
+      -p, --port [port]  指定监听端口号
+      -t, --timeout [timeout] 设置请求超时时间
+
+### 规则配置
+  
+    pattern : {String|Regx|Function} 匹配规则，可以是字符串，正则表达式和自定义函数
+      当为函数，匹配规则时，该函数会传递以下参数调用
+      function(url, pattern, req, res){}
+      url : 当前url
+      pattern : 当前函数引用
+      req : express的Request对象
+      res : express的Response对象
+      函数返回true表示规则匹配命中，返回false表示规则匹配失败
+
+    responder : {String|Function} 
+      当为字符串，表示使用内置插件输入，当前支持的插件有
+      local : 本地文件或路径
+      web : 网络文件
+      concat : 本地文件根据配置打包
+      combo : 本地文件根据url combo格式打包
+      kissy-combo : 根据配置中的kissy配置输出实时编译后的kissy包内容
+
+      当为函数，在规则匹配命中后会调用此函数进行输出，该函数会传递以下参数调用
+      function(pattern, options, req, res, next){}
+      pattern : 匹配规则
+      options : 配置信息
+      req : express的Request对象
+      res : express的Response对象
+      next : express的next方法
+
+    options : {Object} 配置信息，在获取输出时会传递到插件函数中
+
+## 为什么要用Nproxy-Plus
+
+本地代理服务器做的事情大同小异，可以将流程抽象化为：
+
+* 匹配URL
+* 输出本地(或者远端)内容
+
+Nproxy-Plus实现了一个简单的服务器框架，匹配和输出则可以由开发者自行实现
+
+
 
 ## License
 
-NProxy is available under the terms of the MIT License
+NProxy-Plus is available under the terms of the MIT License
