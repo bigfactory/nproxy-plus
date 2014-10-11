@@ -4,7 +4,7 @@
   "contributors" : [
     "Goddy Zhao <goddy128@gmail.com> (http://goddyzhao.me)"
   ],
-  "version": "1.5.3",
+  "version": "1.5.4",
   "description": "A cli proxy tool specialized in file replacing, extend from nproxy",
   "dependencies": {
     "express": "4.9.4",

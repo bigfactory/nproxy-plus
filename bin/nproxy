@@ -16,7 +16,7 @@ program
 
 nproxy(program.port, {
   "responderListFilePath": program.list,
-  "watchPath": program.path,
+  "watchPath": program.watch,
   "timeout": program.timeout,
   "debug": !!program.debug,
   "networks": program.networks
