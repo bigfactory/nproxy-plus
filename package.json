@@ -4,7 +4,7 @@
   "contributors" : [
     "Goddy Zhao <goddy128@gmail.com> (http://goddyzhao.me)"
   ],
-  "version": "1.5.4",
+  "version": "1.6.0",
   "description": "A cli proxy tool specialized in file replacing, extend from nproxy",
   "dependencies": {
     "express": "4.9.4",
@@ -12,7 +12,9 @@
     "mime": "*",
     "step": "*",
     "combo-handler": "1.0.1",
-    "kmc": "1.0.41"
+    "kmc": "1.0.41",
+    "request" : "2.44.0",
+    "async" : "0.9.0"
   },
   "devDependencies":{
     "mocha": "*",

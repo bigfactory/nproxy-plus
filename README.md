@@ -10,7 +10,8 @@
 
 本地编写一个匹配规则文件，命名为例如rule.config.js:
 
-    
+    var proxy = require('nproxy-plus');
+
     module.exports = [
       //替换单个本地文件
       {
@@ -93,6 +94,33 @@
         options : {
           tplPath: '/repos/nproxy/test/support/files/tpl/'
         }
+      },
+
+      //混合响应模式
+      //下例中分别从网络、本地、本地concat以及本地kissy实时合并的结果混合后返回给浏览器
+      {
+        pattern: 'http://nproxy6.com/??aa.js,bb.js,cc.js,dd.js',
+        responder: proxy.mix(
+          proxy.route('fetch', 'http://www.remote.com/aa.js'),
+          proxy.route('local', '/repos/nproxy/replaced/bb.js'),
+          proxy.route('concat', {
+            base : '/gitlab/tm/buy/src/',
+            files : [
+                'app',
+                'data',
+                'util',
+                'init'
+            ]
+          }),
+          proxy.route('kissy', {
+            packages: [{
+              'name': 'mt',
+              'path': '/repos/tb-buy/mt',
+              'charset': 'gbk'
+            }],
+            input: '/repos/tb-buy/mt/index.js' 
+          })
+        )
       }
     ];
 
@@ -144,6 +172,53 @@
 
     options : {Object} 配置信息，在获取输出时会传递到插件函数中
 
+### 混合模式的responder
+
+  往往有时候会遇到这种情况，对于一个combo请求，一部分内容需要从网络上获取，一部分内容则来自本地
+  
+  混合式响应就是为了解决这种问题
+
+  可以使用nproxy-plus中的mix方法产生一个混合式响应
+  
+  以下配置分别从网络、本地、本地concat、本地kissy实时合并以及一个自定义函数输出的的结果混合后返回给浏览器
+
+    var proxy = require('nproxy-plus');
+  
+    function sayHi(callback, name){
+      var content = 'hello' + name;
+      callback(null, content);
+    }
+  
+    module.exports = {
+      pattern: 'http://nproxy6.com/??aa.js,bb.js,cc.js,dd.js',
+      responder: proxy.mix(
+        proxy.route('fetch', 'http://www.remote.com/aa.js'),
+        proxy.route('local', '/repos/nproxy/replaced/bb.js'),
+        proxy.route('concat', {
+          base : '/gitlab/tm/buy/src/',
+          files : [
+              'app',
+              'data',
+              'util',
+              'init'
+          ]
+        }),
+        proxy.route('kissy', {
+          packages: [{
+            'name': 'mt',
+            'path': '/repos/tb-buy/mt',
+            'charset': 'gbk'
+          }],
+          input: '/repos/tb-buy/mt/index.js' 
+        })，
+        proxy.route(sayHi, 'world')
+      )
+    };
+
+proxy.route接收一个字符串或者自定义函数，作为内容加工函数
+
+内置的四种函数为 fetch local concat kissy
+
 ## 为什么要用Nproxy-Plus
 
 本地代理服务器做的事情大同小异，可以将流程抽象化为：
@@ -151,7 +226,8 @@
 * 匹配URL
 * 输出本地(或者远端)内容
 
-Nproxy-Plus实现了一个简单的服务器框架，匹配和输出则可以由开发者自行实现
+Nproxy-Plus实现了一个简单的服务器框架，并提供基本的处理函数
+开发者可以在这个框架的基础上，自定义搭建适合业务使用的代理环境
 
 
 
